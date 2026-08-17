@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boutique Manager</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-name">Boutique Manager</div>
+      <div class="brand-tier">Palier 3 · Premium</div>
+    </div>
+    <nav>
+      <button class="nav-btn active" data-page="produits"><span class="nav-icon">◆</span> Produits</button>
+      <button class="nav-btn" data-page="caisse"><span class="nav-icon">▤</span> Caisse</button>
+      <button class="nav-btn" data-page="inventaire"><span class="nav-icon">☰</span> Inventaire</button>
+      <button class="nav-btn" data-page="clients"><span class="nav-icon">☺</span> Clients</button>
+      <button class="nav-btn" data-page="statistiques"><span class="nav-icon">▲</span> Statistiques</button>
+      <button class="nav-btn" data-page="utilisateurs"><span class="nav-icon">⚙</span> Utilisateurs</button>
+    </nav>
+    <div class="sidebar-footer">
+      <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;">
+        <button class="sidebar-action-btn" onclick="exporterDonnees()">⭳ Sauvegarder les données</button>
+        <button class="sidebar-action-btn" onclick="document.getElementById('input-restaurer').click()">⭱ Restaurer une sauvegarde</button>
+        <input type="file" id="input-restaurer" accept=".json" style="display:none;" onchange="restaurerDonnees(this.files[0])">
+      </div>
+      Édition complète.<br>Produits, caisse, clients, statistiques.
+    </div>
+  </aside>
+
+  <main>
+    <!-- PAGE PRODUITS -->
+    <section class="page active" id="page-produits">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Produits</h1>
+          <p class="page-sub">Ajoute et gère les articles de ta boutique.</p>
+        </div>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi">
+          <div class="kpi-label">Articles en stock</div>
+          <div class="kpi-value" id="kpi-nb-produits">0</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Valeur du stock</div>
+          <div class="kpi-value" id="kpi-valeur-stock">0 FCFA</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Stock faible</div>
+          <div class="kpi-value" id="kpi-stock-faible">0</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:20px;">
+        <div class="form-row">
+          <div class="field">
+            <label>Nom du produit</label>
+            <input type="text" id="input-nom" placeholder="Ex: Savon de Marseille">
+          </div>
+          <div class="field">
+            <label>Prix unitaire (FCFA)</label>
+            <input type="number" id="input-prix" placeholder="500">
+          </div>
+          <div class="field">
+            <label>Quantité en stock (unités)</label>
+            <input type="number" id="input-qte" placeholder="20">
+          </div>
+          <div class="field">
+            <label>Unités par carton (optionnel)</label>
+            <input type="number" id="input-carton" placeholder="Ex: 24">
+          </div>
+        </div>
+        <button class="btn btn-primary" id="btn-ajouter-produit">+ Ajouter le produit</button>
+      </div>
+
+      <div class="card">
+        <table>
+          <thead>
+            <tr><th>Produit</th><th>Prix</th><th>Stock</th><th></th></tr>
+          </thead>
+          <tbody id="table-produits"></tbody>
+        </table>
+        <div class="empty" id="empty-produits" style="display:none;">
+          <div class="empty-title">Aucun produit pour le moment</div>
+          <div>Ajoute ton premier produit avec le formulaire ci-dessus.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE CAISSE -->
+    <section class="page" id="page-caisse">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Caisse</h1>
+          <p class="page-sub">Sélectionne les articles vendus et encaisse la vente.</p>
+        </div>
+      </div>
+
+      <div class="caisse-grid">
+        <div class="card">
+          <div id="liste-caisse-produits"></div>
+          <div class="empty" id="empty-caisse" style="display:none;">
+            <div class="empty-title">Pas encore de produit</div>
+            <div>Ajoute des produits dans l'onglet "Produits" pour pouvoir les vendre.</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="font-family: var(--font-display); font-weight:700; font-size:16px; margin-bottom:14px;">Panier</div>
+          <div id="panier-liste"></div>
+          <div class="empty" id="empty-panier" style="padding:20px 0;">
+            <div>Panier vide</div>
+          </div>
+          <div class="field" style="margin-bottom:10px;">
+            <label>Client</label>
+            <select id="select-client" style="padding:10px 12px; border-radius:8px; border:1px solid var(--line); font-family:var(--font-body); font-size:14px;">
+              <option value="">Client de passage</option>
+            </select>
+          </div>
+          <div class="field" style="margin-bottom:10px;">
+            <label>Vendeur</label>
+            <select id="select-vendeur" style="padding:10px 12px; border-radius:8px; border:1px solid var(--line); font-family:var(--font-body); font-size:14px;">
+              <option value="">Non spécifié</option>
+            </select>
+          </div>
+          <label style="display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:600; color:var(--ink-soft); margin-bottom:14px;">
+            <input type="checkbox" id="check-credit"> Vente à crédit (client paiera plus tard)
+          </label>
+          <div style="display:flex; align-items:center; gap:8px; margin: 0 0 4px 0;">
+            <label style="font-size:12.5px; font-weight:700; color: var(--ink-soft); white-space:nowrap;">Remise (%)</label>
+            <input type="number" id="input-remise" min="0" max="100" placeholder="0" style="width:70px; padding:8px 10px; border-radius:6px; border:1px solid var(--line); font-size:14px;" oninput="renderPanier()">
+          </div>
+          <div id="ligne-sous-total" style="display:flex; justify-content:space-between; font-size:13.5px; color: var(--ink-soft); padding-top:6px;">
+            <span>Sous-total</span>
+            <span id="panier-sous-total">0 FCFA</span>
+          </div>
+          <div id="ligne-remise" style="display:none; justify-content:space-between; font-size:13.5px; color: var(--danger); padding-top:4px;">
+            <span>Remise</span>
+            <span id="panier-remise-montant">-0 FCFA</span>
+          </div>
+          <div class="cart-total-row">
+            <span>Total</span>
+            <span id="panier-total">0 FCFA</span>
+          </div>
+          <div class="field" style="margin-top:12px;">
+            <label>Montant reçu du client (FCFA)</label>
+            <input type="number" id="input-montant-recu" placeholder="Ex: 5000" oninput="calculerMonnaie()">
+          </div>
+          <div id="ligne-monnaie" style="display:none; justify-content:space-between; align-items:center; padding-top:10px; font-family: var(--font-display); font-weight:700; font-size:16px;">
+            <span>Monnaie à rendre</span>
+            <span id="montant-monnaie">0 FCFA</span>
+          </div>
+          <button class="btn btn-money" style="width:100%; margin-top:16px;" id="btn-finaliser">Finaliser la vente</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE INVENTAIRE -->
+    <section class="page" id="page-inventaire">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Inventaire</h1>
+          <p class="page-sub">Vérifie le stock physique et consulte l'historique des mouvements.</p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:20px;">
+        <div style="font-family: var(--font-display); font-weight:700; font-size:16px; margin-bottom:4px;">Vérification du stock</div>
+        <p class="page-sub" style="margin-bottom:16px;">Compte les produits dans la boutique, entre le nombre réel, et corrige l'écart.</p>
+        <table>
+          <thead>
+            <tr><th>Produit</th><th>Stock système</th><th>Stock compté</th><th>Écart</th><th></th></tr>
+          </thead>
+          <tbody id="table-inventaire"></tbody>
+        </table>
+        <div class="empty" id="empty-inventaire" style="display:none;">
+          <div class="empty-title">Aucun produit à vérifier</div>
+          <div>Ajoute des produits dans l'onglet "Produits" d'abord.</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div style="font-family: var(--font-display); font-weight:700; font-size:16px; margin-bottom:16px;">Historique des mouvements</div>
+        <table>
+          <thead>
+            <tr><th>Date</th><th>Produit</th><th>Type</th><th>Quantité</th></tr>
+          </thead>
+          <tbody id="table-mouvements"></tbody>
+        </table>
+        <div class="empty" id="empty-mouvements" style="display:none;">
+          <div class="empty-title">Aucun mouvement enregistré</div>
+          <div>Les ventes, ajustements et ajouts de produits apparaîtront ici.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE CLIENTS -->
+    <section class="page" id="page-clients">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Clients</h1>
+          <p class="page-sub">Gère les coordonnées et les ventes à crédit.</p>
+        </div>
+      </div>
+
+      <div class="kpis" style="grid-template-columns: repeat(3, 1fr);">
+        <div class="kpi">
+          <div class="kpi-label">Clients enregistrés</div>
+          <div class="kpi-value" id="kpi-nb-clients">0</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Total en crédit</div>
+          <div class="kpi-value" id="kpi-total-dette">0 FCFA</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Éligibles à une récompense</div>
+          <div class="kpi-value" id="kpi-eligibles" style="color: var(--warn);">0</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:20px;">
+        <div class="form-row">
+          <div class="field">
+            <label>Nom du client</label>
+            <input type="text" id="input-client-nom" placeholder="Ex: Awa Traoré">
+          </div>
+          <div class="field">
+            <label>Téléphone (optionnel)</label>
+            <input type="text" id="input-client-tel" placeholder="Ex: 70 12 34 56">
+          </div>
+        </div>
+        <button class="btn btn-primary" id="btn-ajouter-client">+ Ajouter le client</button>
+      </div>
+
+      <div class="card" style="margin-bottom:20px;">
+        <div style="font-family: var(--font-display); font-weight:700; font-size:16px; margin-bottom:4px;">Programme de fidélité</div>
+        <p class="page-sub" style="margin-bottom:16px;">Un client gagne 1 point pour chaque tranche dépensée. Une fois le seuil atteint, il devient éligible à une récompense (bon, cadeau, partenaire...).</p>
+        <div class="form-row">
+          <div class="field">
+            <label>FCFA dépensés = 1 point</label>
+            <input type="number" id="input-fcfa-par-point" min="1">
+          </div>
+          <div class="field">
+            <label>Points requis pour une récompense</label>
+            <input type="number" id="input-seuil-recompense" min="1">
+          </div>
+        </div>
+        <button class="btn btn-ghost" id="btn-sauver-fidelite">Enregistrer</button>
+      </div>
+
+      <div class="card">
+        <table>
+          <thead>
+            <tr><th>Client</th><th>Téléphone</th><th>Dette en cours</th><th>Points</th><th></th></tr>
+          </thead>
+          <tbody id="table-clients"></tbody>
+        </table>
+        <div class="empty" id="empty-clients" style="display:none;">
+          <div class="empty-title">Aucun client pour le moment</div>
+          <div>Ajoute ton premier client avec le formulaire ci-dessus.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE STATISTIQUES -->
+    <section class="page" id="page-statistiques">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Statistiques</h1>
+          <p class="page-sub">Vue d'ensemble des ventes de la boutique.</p>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-ghost btn-sm" onclick="exporterCSV()">⭳ Exporter en CSV</button>
+          <button class="btn btn-ghost btn-sm" onclick="imprimerRapport()">🖶 Imprimer / PDF</button>
+        </div>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi">
+          <div class="kpi-label">Ventes aujourd'hui</div>
+          <div class="kpi-value" id="kpi-vente-jour">0 FCFA</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Ventes ce mois-ci</div>
+          <div class="kpi-value" id="kpi-vente-mois">0 FCFA</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Total encaissé (tout temps)</div>
+          <div class="kpi-value" id="kpi-total-encaisse">0 FCFA</div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Crédit en cours</div>
+          <div class="kpi-value" id="kpi-credit-cours">0 FCFA</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:20px;">
+        <div style="font-family: var(--font-display); font-weight:700; font-size:16px; margin-bottom:16px;">Ventes des 7 derniers jours</div>
+        <div id="chart-7jours" style="display:flex; gap:10px; align-items:flex-end;"></div>
+      </div>
+
+      <div class="card">
+        <div style="font-family: var(--font-display); font-weight:700; font-size:16px; margin-bottom:16px;">Produits les plus vendus</div>
+        <table>
+          <thead>
+            <tr><th>Produit</th><th>Quantité vendue</th><th>Revenu généré</th></tr>
+          </thead>
+          <tbody id="table-top-produits"></tbody>
+        </table>
+        <div class="empty" id="empty-top-produits" style="display:none;">
+          <div class="empty-title">Pas encore de vente enregistrée</div>
+          <div>Les statistiques apparaîtront après les premières ventes.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PAGE UTILISATEURS -->
+    <section class="page" id="page-utilisateurs">
+      <div class="page-head">
+        <div>
+          <h1 class="page-title">Utilisateurs</h1>
+          <p class="page-sub">Gère les employés qui utilisent la caisse.</p>
+        </div>
+      </div>
+
+      <div class="card" style="margin-bottom:20px;">
+        <div class="form-row">
+          <div class="field">
+            <label>Nom de l'employé</label>
+            <input type="text" id="input-user-nom" placeholder="Ex: Moussa">
+          </div>
+          <div class="field">
+            <label>Rôle</label>
+            <select id="input-user-role" style="padding:10px 12px; border-radius:8px; border:1px solid var(--line); font-family:var(--font-body); font-size:14px;">
+              <option value="Gérant">Gérant</option>
+              <option value="Caissier">Caissier</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-primary" id="btn-ajouter-utilisateur">+ Ajouter l'utilisateur</button>
+      </div>
+
+      <div class="card">
+        <table>
+          <thead>
+            <tr><th>Nom</th><th>Rôle</th><th></th></tr>
+          </thead>
+          <tbody id="table-utilisateurs"></tbody>
+        </table>
+        <div class="empty" id="empty-utilisateurs" style="display:none;">
+          <div class="empty-title">Aucun utilisateur pour le moment</div>
+          <div>Ajoute les employés qui utiliseront la caisse. Ça permet de savoir qui a fait quelle vente.</div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
